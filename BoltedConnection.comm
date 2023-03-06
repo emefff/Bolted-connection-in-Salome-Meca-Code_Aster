@@ -1,0 +1,216 @@
+DEBUT()
+
+
+pretension_M24_8dot8 = 163000
+
+coef_pena_cont = 2e6
+
+bolthead_springs_stiffness = 1
+
+box2_stiffness = 1
+
+mesh = LIRE_MAILLAGE(UNITE=20)
+
+mesh = MODI_MAILLAGE(reuse=mesh,
+                     MAILLAGE=mesh,
+                     ORIE_PEAU=_F(GROUP_MA_PEAU=('BOX1_CONT_BOX2', 'BOX2_CONT_BOX1')))
+
+mesh_POI = CREA_MAILLAGE(CREA_POI1=(_F(GROUP_MA=('BOLT1_HEAD_surf', 'BOLT2_HEAD_surf'),
+                                       NOM_GROUP_MA=('HEADS_springs', )),
+                                    _F(GROUP_MA=('BOX2_surf', ),
+                                       NOM_GROUP_MA=('BOX2_springs', ))),
+                         MAILLAGE=mesh)
+
+model = AFFE_MODELE(AFFE=(_F(MODELISATION='3D',
+                             PHENOMENE='MECANIQUE',
+                             TOUT='OUI'),
+                          _F(GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
+                             MODELISATION='POU_D_T',
+                             PHENOMENE='MECANIQUE'),
+                          _F(GROUP_MA=('HEADS_springs', 'BOX2_springs'),
+                             MODELISATION='DIS_T',
+                             PHENOMENE='MECANIQUE')),
+                    MAILLAGE=mesh_POI)
+
+elemprop = AFFE_CARA_ELEM(DISCRET=(_F(CARA='K_T_D_N',
+                                      GROUP_MA=('HEADS_springs', ),
+                                      VALE=(bolthead_springs_stiffness, bolthead_springs_stiffness, bolthead_springs_stiffness)),
+                                   _F(CARA='K_T_D_N',
+                                      GROUP_MA=('BOX2_springs', ),
+                                      VALE=(box2_stiffness, box2_stiffness, box2_stiffness))),
+                          MODELE=model,
+                          POUTRE=_F(CARA=('R', ),
+                                    GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
+                                    SECTION='CERCLE',
+                                    VALE=(12.0, ),
+                                    VARI_SECT='CONSTANT'))
+
+steel1 = DEFI_MATERIAU(ELAS=_F(E=210000.0,
+                               NU=0.3))
+
+steel2 = DEFI_MATERIAU(ELAS=_F(E=195000.0,
+                               NU=0.33))
+
+fieldmat = AFFE_MATERIAU(AFFE=(_F(MATER=(steel1, ),
+                                  TOUT='OUI'),
+                               _F(GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
+                                  MATER=(steel2, ))),
+                         MODELE=model)
+
+listr = DEFI_LIST_REEL(DEBUT=0.0,
+                       INTERVALLE=_F(JUSQU_A=2.0,
+                                     NOMBRE=2))
+
+times = DEFI_LIST_INST(DEFI_LIST=_F(LIST_INST=listr),
+                       METHODE='AUTO')
+
+func = DEFI_FONCTION(INTERPOL=('LIN', ),
+                     NOM_PARA='INST',
+                     PROL_DROITE='LINEAIRE',
+                     PROL_GAUCHE='LINEAIRE',
+                     VALE=(0.0, 0.0, 1.0, 0.0, 2.0, 1.0))
+
+FIX = AFFE_CHAR_CINE(MECA_IMPO=_F(DX=0.0,
+                                  DY=0.0,
+                                  DZ=0.0,
+                                  GROUP_MA=('BOX1_FIX', )),
+                     MODELE=model)
+
+FORCE = AFFE_CHAR_MECA(FORCE_FACE=_F(FX=50.0,
+                                     FY=50.0,
+                                     FZ=10.0,
+                                     GROUP_MA=('BOX2_FORCE', )),
+                       MODELE=model)
+
+CONTACT = DEFI_CONTACT(ALGO_RESO_CONT='POINT_FIXE',
+                       ALGO_RESO_GEOM='POINT_FIXE',
+                       FORMULATION='CONTINUE',
+                       FROTTEMENT='SANS',
+                       LISSAGE='OUI',
+                       MODELE=model,
+                       NB_ITER_GEOM=3,
+                       REAC_GEOM='CONTROLE',
+                       ZONE=(_F(ADAPTATION='CYCLAGE',
+                                ALGO_CONT='PENALISATION',
+                                COEF_PENA_CONT=coef_pena_cont,
+                                CONTACT_INIT='INTERPENETRE',
+                                GROUP_MA_ESCL=('BOX2_CONT_BOX1', ),
+                                GROUP_MA_MAIT=('BOX1_CONT_BOX2', )),
+                             _F(ADAPTATION='CYCLAGE',
+                                ALGO_CONT='PENALISATION',
+                                COEF_PENA_CONT=coef_pena_cont,
+                                CONTACT_INIT='INTERPENETRE',
+                                GROUP_MA_ESCL=('BOLTHEAD1_cont_UH', ),
+                                GROUP_MA_MAIT=('BOX2_UNDERHEAD1', )),
+                             _F(ADAPTATION='CYCLAGE',
+                                ALGO_CONT='PENALISATION',
+                                COEF_PENA_CONT=coef_pena_cont,
+                                CONTACT_INIT='INTERPENETRE',
+                                GROUP_MA_ESCL=('BOLTHEAD2_cont_UH', ),
+                                GROUP_MA_MAIT=('BOX2_UNDERHEAD2', ))))
+
+glueBOLT = AFFE_CHAR_MECA(LIAISON_ELEM=(_F(GROUP_MA_1=('BOX1_THREAD1', ),
+                                           GROUP_NO_2=('BOLT1_conn_THR', ),
+                                           OPTION='3D_POU'),
+                                        _F(GROUP_MA_1=('BOX1_THREAD2', ),
+                                           GROUP_NO_2=('BOLT2_conn_THR', ),
+                                           OPTION='3D_POU')),
+                          LIAISON_MAIL=(_F(GROUP_MA_MAIT=('BOLTHEAD1_ALL', ),
+                                           GROUP_NO_ESCL=('BOLT1_conn_UH', )),
+                                        _F(GROUP_MA_MAIT=('BOLTHEAD2_ALL', ),
+                                           GROUP_NO_ESCL=('BOLT2_conn_UH', ))),
+                          MODELE=model)
+
+PRETBOLT = CREA_CHAMP(AFFE=_F(GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
+                              NOM_CMP=('N', ),
+                              VALE=(pretension_M24_8dot8, )),
+                      MODELE=model,
+                      OPERATION='AFFE',
+                      PROL_ZERO='OUI',
+                      TYPE_CHAM='ELGA_SIEF_R')
+
+ETATINIT = CREA_RESU(AFFE=_F(CARA_ELEM=elemprop,
+                             CHAM_GD=PRETBOLT,
+                             CHAM_MATER=fieldmat,
+                             LIST_INST=listr,
+                             MODELE=model),
+                     NOM_CHAM='SIEF_ELGA',
+                     OPERATION='AFFE',
+                     TYPE_RESU='EVOL_NOLI')
+
+resnon1 = STAT_NON_LINE(CARA_ELEM=elemprop,
+                        CHAM_MATER=fieldmat,
+                        COMPORTEMENT=_F(DEFORMATION='PETIT',
+                                        RELATION='ELAS',
+                                        TOUT='OUI'),
+                        CONTACT=CONTACT,
+                        CONVERGENCE=_F(ITER_GLOB_MAXI=100,
+                                       RESI_GLOB_RELA=1e-06),
+                        ETAT_INIT=_F(EVOL_NOLI=ETATINIT,
+                                     INST=0.0),
+                        EXCIT=(_F(CHARGE=FIX),
+                               _F(CHARGE=glueBOLT)),
+                        INCREMENT=_F(INST_FIN=1.0,
+                                     LIST_INST=times),
+                        METHODE='NEWTON',
+                        MODELE=model,
+                        NEWTON=_F(MATRICE='TANGENTE',
+                                  PREDICTION='ELASTIQUE',
+                                  REAC_INCR=1,
+                                  REAC_ITER=1),
+                        SOLVEUR=_F(MATR_DISTRIBUEE='OUI',
+                                   METHODE='MUMPS',
+                                   RENUM='AUTO'))
+
+resnon2 = STAT_NON_LINE(CARA_ELEM=elemprop,
+                        CHAM_MATER=fieldmat,
+                        COMPORTEMENT=_F(DEFORMATION='PETIT',
+                                        RELATION='ELAS',
+                                        TOUT='OUI'),
+                        CONTACT=CONTACT,
+                        CONVERGENCE=_F(ITER_GLOB_MAXI=100,
+                                       RESI_GLOB_RELA=1e-06),
+                        ETAT_INIT=_F(EVOL_NOLI=resnon1,
+                                     INST=1.0),
+                        EXCIT=(_F(CHARGE=FIX),
+                               _F(CHARGE=glueBOLT,
+                                  TYPE_CHARGE='DIDI'),
+                               _F(CHARGE=FORCE,
+                                  FONC_MULT=func)),
+                        INCREMENT=_F(INST_FIN=2.0,
+                                     LIST_INST=times),
+                        METHODE='NEWTON',
+                        MODELE=model,
+                        NEWTON=_F(MATRICE='TANGENTE',
+                                  PREDICTION='ELASTIQUE',
+                                  REAC_INCR=1,
+                                  REAC_ITER=1),
+                        SOLVEUR=_F(MATR_DISTRIBUEE='OUI',
+                                   METHODE='MUMPS',
+                                   RENUM='AUTO'))
+
+resnon1 = CALC_CHAMP(reuse=resnon1,
+                     CRITERES=('SIEQ_NOEU', ),
+                     RESULTAT=resnon1)
+
+resnon2 = CALC_CHAMP(reuse=resnon2,
+                     CRITERES=('SIEQ_NOEU', ),
+                     RESULTAT=resnon2)
+
+IMPR_RESU(FORMAT='MED',
+          RESU=(_F(CARA_ELEM=elemprop,
+                   RESULTAT=resnon1),
+                _F(CARA_ELEM=elemprop,
+                   RESULTAT=resnon2)),
+          UNITE=2)
+
+IMPR_RESU(FORMAT='RESULTAT',
+          RESU=(_F(GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
+                   INST=(0.0, 1.0),
+                   RESULTAT=resnon1),
+                _F(GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
+                   INST=(2.0, ),
+                   RESULTAT=resnon2)),
+          UNITE=4)
+
+FIN()
