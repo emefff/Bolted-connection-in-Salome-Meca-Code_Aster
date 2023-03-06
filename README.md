@@ -7,4 +7,4 @@ First, make sure to have the bolts modeled in 3D, there is no need to model the 
 Cut off the shafts, only leave the heads for later use. Make sure, the underhead area is a partition of the head and part. Make a partition of the bolt shafts and the thread bore in the other part.
 Draw lines, that will substitue the FREE length of the shaft. These will be modeled with the bar elements later. Name everything you need appropriately (bolt shaft, both nodes in hte shafts, underhead areas, all volumes etc.).
 Mesh all parts and build a compound mesh.
-Import this compound mesh into Asterstudy. See .comm file above for the rest. Once you've mastered this, 20-30 bolts in one model are quite easy. With contact, attaching springs SOMEWHERE in the model always makes sense.
+Import this compound mesh into Asterstudy. See .comm file above for the rest. Once you've mastered this, 20-30 bolts in one model are quite easy. However, it is qwuite a lot of work, though. With contact, attaching springs SOMEWHERE in the model always makes sense.
