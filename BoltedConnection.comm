@@ -7,7 +7,7 @@ coef_pena_cont = 2e6
 
 bolthead_springs_stiffness = 1
 
-box2_stiffness = 1
+box2_springs_stiffness = 1
 
 mesh = LIRE_MAILLAGE(UNITE=20)
 
@@ -37,7 +37,7 @@ elemprop = AFFE_CARA_ELEM(DISCRET=(_F(CARA='K_T_D_N',
                                       VALE=(bolthead_springs_stiffness, bolthead_springs_stiffness, bolthead_springs_stiffness)),
                                    _F(CARA='K_T_D_N',
                                       GROUP_MA=('BOX2_springs', ),
-                                      VALE=(box2_stiffness, box2_stiffness, box2_stiffness))),
+                                      VALE=(box2_springs_stiffness, box2_springs_stiffness, box2_springs_stiffness))),
                           MODELE=model,
                           POUTRE=_F(CARA=('R', ),
                                     GROUP_MA=('BOLT1_shaft_ALL', 'BOLT2_shaft_ALL'),
