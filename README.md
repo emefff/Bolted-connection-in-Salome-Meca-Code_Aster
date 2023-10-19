@@ -16,3 +16,6 @@ Geometry (red lines in bores symbolize the bar elements):
 
 Result in t=2 with force applied (displacement exaggerated):
 ![Bildschirmfoto vom 2023-03-06 18-01-44](https://user-images.githubusercontent.com/89903493/223179685-85d8af51-ca0e-419d-b5dd-f5ef0c5f2b58.png)
+
+
+emefff@gmx.at
